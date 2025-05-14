@@ -3,12 +3,7 @@
     "step": {
       "user": {
         "data": {
-          "name": "[%key:common::config_flow::data::name%]",
-          "api_key": "[%key:common::config_flow::data::api_key%]",
-          "base_url": "[%key:common::config_flow::data::base_url%]",
-          "api_version": "[%key:common::config_flow::data::api_version%]",
-          "organization": "[%key:common::config_flow::data::organization%]",
-          "skip_authentication": "[%key:common::config_flow::data::skip_authentication%]"
+          "api_key": "[%key:common::config_flow::data::api_key%]"
         }
       }
     },
@@ -22,51 +17,98 @@
     "step": {
       "init": {
         "data": {
-          "prompt": "Prompt Template",
-          "model": "Completion Model",
+          "prompt": "Instructions",
+          "chat_model": "[%key:common::generic::model%]",
           "max_tokens": "Maximum tokens to return in response",
           "temperature": "Temperature",
           "top_p": "Top P",
-          "max_function_calls_per_conversation": "Maximum function calls per conversation",
-          "functions": "Functions",
-          "attach_username": "Attach Username to Message",
-          "use_tools": "Use Tools",
-          "context_threshold": "Context Threshold",
-          "context_truncate_strategy": "Context truncation strategy when exceeded threshold"
+          "llm_hass_api": "[%key:common::config_flow::data::llm_hass_api%]",
+          "recommended": "Recommended model settings",
+          "reasoning_effort": "Reasoning effort",
+          "web_search": "Enable web search",
+          "search_context_size": "Search context size",
+          "user_location": "Include home location"
+        },
+        "data_description": {
+          "prompt": "Instruct how the LLM should respond. This can be a template.",
+          "reasoning_effort": "How many reasoning tokens the model should generate before creating a response to the prompt (for certain reasoning models)",
+          "web_search": "Allow the model to search the web for the latest information before generating a response",
+          "search_context_size": "High level guidance for the amount of context window space to use for the search",
+          "user_location": "Refine search results based on geography"
         }
+      }
+    },
+    "error": {
+      "model_not_supported": "This model is not supported, please select a different model",
+      "web_search_not_supported": "Web search is not supported by this model"
+    }
+  },
+  "selector": {
+    "reasoning_effort": {
+      "options": {
+        "low": "[%key:common::state::low%]",
+        "medium": "[%key:common::state::medium%]",
+        "high": "[%key:common::state::high%]"
+      }
+    },
+    "search_context_size": {
+      "options": {
+        "low": "[%key:common::state::low%]",
+        "medium": "[%key:common::state::medium%]",
+        "high": "[%key:common::state::high%]"
       }
     }
   },
   "services": {
-    "query_image": {
-      "name": "Query image",
-      "description": "Take in images and answer questions about them",
+    "generate_image": {
+      "name": "Generate image",
+      "description": "Turns a prompt into an image",
       "fields": {
         "config_entry": {
-          "name": "Config Entry",
-          "description": "The config entry to use for this service"
-        },
-        "model": {
-          "name": "Model",
-          "description": "The model",
-          "example": "gpt-4-vision-preview"
+          "name": "Config entry",
+          "description": "The config entry to use for this action"
         },
         "prompt": {
           "name": "Prompt",
-          "description": "The text to ask about image",
-          "example": "What’s in this image?"
+          "description": "The text to turn into an image",
+          "example": "A photo of a dog"
         },
-        "images": {
-          "name": "Images",
-          "description": "A list of images that would be asked",
-          "example": "{\"url\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg\"}"
+        "size": {
+          "name": "Size",
+          "description": "The size of the image to generate"
         },
-        "max_tokens": {
-          "name": "Max Tokens",
-          "description": "The maximum tokens",
-          "example": "300"
+        "quality": {
+          "name": "Quality",
+          "description": "The quality of the image that will be generated"
+        },
+        "style": {
+          "name": "Style",
+          "description": "The style of the generated image"
         }
       }
+    },
+    "generate_content": {
+      "name": "Generate content",
+      "description": "Sends a conversational query to ChatGPT including any attached image or PDF files",
+      "fields": {
+        "config_entry": {
+          "name": "Config entry",
+          "description": "The config entry to use for this action"
+        },
+        "prompt": {
+          "name": "Prompt",
+          "description": "The prompt to send"
+        },
+        "filenames": {
+          "name": "Files",
+          "description": "List of files to upload"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_config_entry": {
+      "message": "Invalid config entry provided. Got {config_entry}"
     }
   }
 }

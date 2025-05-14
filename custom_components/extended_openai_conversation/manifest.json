@@ -2,7 +2,7 @@
   "domain": "extended_openai_conversation",
   "name": "Extended OpenAI Conversation",
   "codeowners": [
-    "@jekalmin"
+    "@JonahMMay"
   ],
   "config_flow": true,
   "dependencies": [
@@ -13,12 +13,12 @@
     "rest",
     "scrape"
   ],
-  "documentation": "https://github.com/jekalmin/extended_openai_conversation",
+  "documentation": "https://github.com/Jonah-May-OSS/extended_openai_conversation",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/jekalmin/extended_openai_conversation/issues",
+  "issue_tracker": "https://github.com/Jonah-May-OSS/extended_openai_conversation/issues",
   "requirements": [
-    "openai~=1.61.0"
+    "openai~=1.78.1"
   ],
-  "version": "1.0.6"
+  "version": "1.0.7"
 }
