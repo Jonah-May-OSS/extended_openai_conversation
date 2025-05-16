@@ -37,6 +37,7 @@ from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    CONF_BASE_URL,
     CONF_CHAT_MODEL,
     CONF_FILENAMES,
     CONF_MAX_TOKENS,
@@ -51,6 +52,7 @@ from .const import (
     RECOMMENDED_REASONING_EFFORT,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
+    CONF_USE_RESPONSES_ENDPOINT
 )
 
 SERVICE_GENERATE_IMAGE = "generate_image"
@@ -169,9 +171,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             model_args = {
                 "model": model,
                 "input": messages,
-                "max_output_tokens": entry.options.get(
-                    CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
-                ),
                 "top_p": entry.options.get(CONF_TOP_P, RECOMMENDED_TOP_P),
                 "temperature": entry.options.get(
                     CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE
@@ -180,6 +179,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 "store": False,
             }
 
+            if entry.options.get(CONF_USE_RESPONSES_ENDPOINT, True):
+                model_args["max_output_tokens"] = entry.options.get(
+                    CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
+                )
+            else:
+                model_args["max_tokens"] = entry.options.get(
+                    CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
+                )
+
             if model.startswith("o"):
                 model_args["reasoning"] = {
                     "effort": entry.options.get(
@@ -187,7 +195,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     )
                 }
 
-            response: Response = await client.responses.create(**model_args)
+            if entry.options.get(CONF_USE_RESPONSES_ENDPOINT, True):
+                response: Response = await client.responses.create(**model_args)
+            else:
+                response: Response = await client.chat.completions.create(**model_args)
 
         except openai.OpenAIError as err:
             raise HomeAssistantError(f"Error generating content: {err}") from err
@@ -243,30 +254,45 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: OpenAIConfigEntry) -> bool:
     """Set up OpenAI Conversation from a config entry."""
-    base_url = entry.data.get(CONF_BASE_URL, "https://api.openai.com")  # Custom URL
+    base_url = entry.data.get(CONF_BASE_URL, "https://api.openai.com/v1")  # Custom URL
 
-    client = openai.AsyncOpenAI(
-        api_key=entry.data[CONF_API_KEY],
-        base_url=base_url,  # Use the custom URL here
-        http_client=get_async_client(hass),
-    )
-
-    # Cache current platform data which gets added to each request (caching done by library)
-    _ = await hass.async_add_executor_job(client.platform_headers)
+    # Basic validation to ensure base_url is a valid URL
+    if not isinstance(base_url, str) or not base_url.startswith("http"):
+        raise HomeAssistantError(f"Invalid base URL: {base_url}. Ensure it starts with http(s).")
 
     try:
-        await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
-    except openai.AuthenticationError as err:
-        LOGGER.error("Invalid API key: %s", err)
+        # Initialize the OpenAI client with the base URL
+        client = openai.AsyncOpenAI(
+            api_key=entry.data[CONF_API_KEY],
+            base_url=base_url,  # Use the custom URL here
+            http_client=get_async_client(hass),
+        )
+        
+        # Cache current platform data which gets added to each request (caching done by library)
+        _ = await hass.async_add_executor_job(client.platform_headers)
+
+        try:
+            # Test if the API key is valid by listing models
+            await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
+        except openai.AuthenticationError as err:
+            LOGGER.error("Invalid API key: %s", err)
+            return False
+        except openai.OpenAIError as err:
+            LOGGER.error("OpenAI error: %s", err)
+            raise ConfigEntryNotReady("Unable to communicate with OpenAI.") from err
+
+        # Cache the client to the entry's runtime data
+        entry.runtime_data = client
+
+        # Forward the entry to the platforms (i.e., integrate it into Home Assistant)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+        return True
+
+    except Exception as err:
+        # Catch any other errors (e.g., network issues or invalid URL format)
+        LOGGER.error("Error setting up OpenAI Conversation integration: %s", err)
         return False
-    except openai.OpenAIError as err:
-        raise ConfigEntryNotReady(err) from err
-
-    entry.runtime_data = client
-
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

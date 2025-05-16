@@ -1,5 +1,3 @@
-"""Config flow for OpenAI Conversation integration."""
-
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -65,16 +63,31 @@ from .const import (
     RECOMMENDED_WEB_SEARCH_USER_LOCATION,
     UNSUPPORTED_MODELS,
     WEB_SEARCH_MODELS,
+    CONF_DISABLE_AUTH,
+    RECOMMENDED_DISABLE_AUTH,
+    CONF_USE_RESPONSES_ENDPOINT,
+    RECOMMENDED_USE_RESPONSES_ENDPOINT,
+    CONF_USE_CHAT_STREAMING,
+    RECOMMENDED_USE_CHAT_STREAMING,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_API_KEY): str,
-        vol.Optional("base_url", default="https://api.openai.com"): str,  # Custom URL option
+        vol.Required("base_url", default="https://api.openai.com/v1"): str,  # Custom URL option
+        vol.Optional(
+            CONF_DISABLE_AUTH,
+            default=RECOMMENDED_DISABLE_AUTH,
+            description="Disable authentication for OpenAI endpoint"
+        ): bool,
+        vol.Required(
+            CONF_API_KEY,
+            description="The API key for authenticating with OpenAI (only required if authentication is enabled)"
+        ): str,  # Only required if authentication is enabled
     }
 )
+
 
 RECOMMENDED_OPTIONS = {
     CONF_RECOMMENDED: True,
@@ -82,56 +95,68 @@ RECOMMENDED_OPTIONS = {
     CONF_PROMPT: llm.DEFAULT_INSTRUCTIONS_PROMPT,
 }
 
-
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
     """Validate the user input allows us to connect.
 
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
-    base_url = data.get("base_url", "https://api.openai.com")  # Custom URL
     client = openai.AsyncOpenAI(
-        api_key=data[CONF_API_KEY], base_url=base_url, http_client=get_async_client(hass)
+        api_key=data[CONF_API_KEY], http_client=get_async_client(hass)
     )
     await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
-
 
 class OpenAIConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for OpenAI Conversation."""
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step."""
         if user_input is None:
+            _LOGGER.debug("Rendering the config flow form with initial data schema.")
             return self.async_show_form(
                 step_id="user", data_schema=STEP_USER_DATA_SCHEMA
             )
 
         errors: dict[str, str] = {}
 
+        # Log the received user input to verify it
+        _LOGGER.debug("User input received: %s", user_input)
+
+        # Check if authentication is disabled
+        if user_input.get(CONF_DISABLE_AUTH, False):
+            _LOGGER.debug("Authentication is disabled, skipping API key validation.")
+            api_key = "test"  # No API key needed if authentication is disabled
+        else:
+            api_key = user_input.get(CONF_API_KEY)
+
+        base_url = user_input.get("base_url", "https://api.openai.com/v1")
+        _LOGGER.debug("Base URL: %s", base_url)  # Log the base URL for verification
+
         try:
             await validate_input(self.hass, user_input)
-        except openai.APIConnectionError:
+        except openai.APIConnectionError as e:
             errors["base"] = "cannot_connect"
-        except openai.AuthenticationError:
+            _LOGGER.error("API connection error: %s", e)
+        except openai.AuthenticationError as e:
             errors["base"] = "invalid_auth"
-        except Exception:
-            _LOGGER.exception("Unexpected exception")
+            _LOGGER.error("Authentication error: %s", e)
+        except Exception as e:
+            _LOGGER.exception("Unexpected error during OpenAI config flow: %s", e)
             errors["base"] = "unknown"
         else:
+            # If the connection is successful, create the entry
             return self.async_create_entry(
-                title="ChatGPT",
-                data=user_input,
-                options=RECOMMENDED_OPTIONS,
+                title="OpenAI Conversation",
+                data=user_input
             )
 
+        _LOGGER.debug("Form errors: %s", errors)  # Log the form errors
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
-
-    @staticmethod
+    
+    staticmethod
     def async_get_options_flow(
         config_entry: ConfigEntry,
     ) -> OptionsFlow:
@@ -181,6 +206,7 @@ class OpenAIOptionsFlow(OptionsFlow):
                     CONF_RECOMMENDED: user_input[CONF_RECOMMENDED],
                     CONF_PROMPT: user_input[CONF_PROMPT],
                     CONF_LLM_HASS_API: user_input.get(CONF_LLM_HASS_API),
+                    CONF_USE_RESPONSES_ENDPOINT: user_input.get(CONF_USE_RESPONSES_ENDPOINT, RECOMMENDED_USE_RESPONSES_ENDPOINT)
                 }
 
         schema = openai_config_option_schema(self.hass, options)
@@ -197,7 +223,7 @@ class OpenAIOptionsFlow(OptionsFlow):
         if zone_home is not None:
             client = openai.AsyncOpenAI(
                 api_key=self.config_entry.data[CONF_API_KEY],
-                base_url=self.config_entry.data.get("base_url", "https://api.openai.com"),  # Use the custom URL here
+                base_url=self.config_entry.data.get("base_url", "https://api.openai.com/v1"),  # Use the custom URL here
                 http_client=get_async_client(self.hass),
             )
             location_schema = vol.Schema(
@@ -216,13 +242,15 @@ class OpenAIOptionsFlow(OptionsFlow):
                 model=RECOMMENDED_CHAT_MODEL,
                 input=[{
                     "role": "system",
-                    "content": f"Where are the following coordinates located: ({zone_home.attributes[ATTR_LATITUDE]}, {zone_home.attributes[ATTR_LONGITUDE]})?"
+                    "content": "Where are the following coordinates located: "
+                    f"({zone_home.attributes[ATTR_LATITUDE]},"
+                    f" {zone_home.attributes[ATTR_LONGITUDE]})?"
                 }],
-                text={
+                text={ 
                     "format": {
                         "type": "json_schema",
                         "name": "approximate_location",
-                        "description": "Approximate location data of the user for refined web search results",
+                        "description": "Approximate location data of the user",
                         "schema": convert(location_schema),
                         "strict": False,
                     }
@@ -259,7 +287,7 @@ def openai_config_option_schema(
     schema: VolDictType = {
         vol.Optional(
             CONF_PROMPT,
-            description={
+            description={ 
                 "suggested_value": options.get(
                     CONF_PROMPT, llm.DEFAULT_INSTRUCTIONS_PROMPT
                 )
@@ -334,6 +362,20 @@ def openai_config_option_schema(
                     "suggested_value": options.get(CONF_WEB_SEARCH_USER_LOCATION)
                 },
                 default=RECOMMENDED_WEB_SEARCH_USER_LOCATION,
+            ): bool,
+            vol.Optional(
+                CONF_USE_RESPONSES_ENDPOINT,
+                description={ 
+                    "suggested_value": options.get(CONF_USE_RESPONSES_ENDPOINT, RECOMMENDED_USE_RESPONSES_ENDPOINT)
+                },
+                default=RECOMMENDED_USE_RESPONSES_ENDPOINT,
+            ): bool,
+            vol.Optional(
+                CONF_USE_CHAT_STREAMING,
+                description={ 
+                    "suggested_value": options.get(CONF_USE_CHAT_STREAMING)
+                },
+                default=RECOMMENDED_USE_CHAT_STREAMING,
             ): bool,
         }
     )

@@ -2,7 +2,8 @@
 
 import logging
 
-DOMAIN = "openai_conversation"
+DOMAIN = "extended_openai_conversation"
+DEFAULT_NAME = "Extended OpenAI Conversation"
 LOGGER: logging.Logger = logging.getLogger(__package__)
 
 # Configuration keys for integration
@@ -21,7 +22,10 @@ CONF_WEB_SEARCH_CITY = "city"
 CONF_WEB_SEARCH_REGION = "region"
 CONF_WEB_SEARCH_COUNTRY = "country"
 CONF_WEB_SEARCH_TIMEZONE = "timezone"
-CONF_BASE_URL = "base_url"  # New constant for custom API URL
+CONF_BASE_URL = "base_url"
+CONF_DISABLE_AUTH = "disable_auth"
+CONF_USE_RESPONSES_ENDPOINT = "use_responses_endpoint"
+CONF_USE_CHAT_STREAMING = "use_chat_streaming"
 
 # Default values for configuration
 RECOMMENDED_CHAT_MODEL = "gpt-4o-mini"
@@ -32,7 +36,10 @@ RECOMMENDED_TOP_P = 1.0
 RECOMMENDED_WEB_SEARCH = False
 RECOMMENDED_WEB_SEARCH_CONTEXT_SIZE = "medium"
 RECOMMENDED_WEB_SEARCH_USER_LOCATION = False
-DEFAULT_BASE_URL = "https://api.openai.com"  # Default URL for OpenAI API
+DEFAULT_BASE_URL = "https://api.openai.com/v1"  # Default URL for OpenAI API
+RECOMMENDED_DISABLE_AUTH = False
+RECOMMENDED_USE_RESPONSES_ENDPOINT = True
+RECOMMENDED_USE_CHAT_STREAMING = True
 
 # List of unsupported models
 UNSUPPORTED_MODELS: list[str] = [

@@ -1,72 +1,120 @@
 {
     "config": {
-        "error": {
-            "cannot_connect": "Fehler beim Verbindungsaufbau",
-            "invalid_auth": "Authentifizierung fehlgeschlagen",
-            "unknown": "Unbekannter Fehler"
-        },
         "step": {
             "user": {
                 "data": {
-                    "name": "Name",
-                    "api_key": "API Key",
-                    "base_url": "Base Url",
-                    "api_version": "Api Version",
-                    "organization": "Organization",
-                    "skip_authentication": "Authentifizierung überspringen"
+                    "api_key": "API-sleutel",
+                    "base_url": "Basis-URL",
+                    "disable_auth": "Sla authenticatie over"
                 }
             }
+        },
+        "error": {
+            "cannot_connect": "Verbinden mislukt",
+            "invalid_auth": "Ongeldige authenticatie",
+            "unknown": "Onverwachte fout"
         }
     },
     "options": {
         "step": {
             "init": {
                 "data": {
-                    "max_tokens": "Maximale Anzahl an Tokens, die in einer Antwort zurückgegeben werden",
-                    "model": "Completion Model",
-                    "prompt": "Prompt Vorlage",
-                    "temperature": "Temperatur",
+                    "prompt": "Instructies",
+                    "chat_model": "Model",
+                    "max_tokens": "Maximale tokens om terug te geven in antwoord",
+                    "temperature": "Temperatuur",
                     "top_p": "Top P",
-                    "max_function_calls_per_conversation": "Maximale Anzahl an Funktionsaufrufen pro Konversation",
-                    "functions": "Funktionen",
-                    "attach_username": "Benutzernamen mitgeben",
-                    "use_tools": "Use Tools",
-                    "context_threshold": "Context Threshold",
-                    "context_truncate_strategy": "Context truncation strategy when exceeded threshold"
+                    "llm_hass_api": "Beheer Home Assistant",
+                    "recommended": "Aanbevolen modelinstellingen",
+                    "reasoning_effort": "Redeneerinspanning",
+                    "web_search": "Web zoeken inschakelen",
+                    "search_context_size": "Zoekcontextgrootte",
+                    "user_location": "Thuislocatie opnemen",
+                    "use_responses_endpoint": "Gebruik responses-endpoint",
+                    "use_chat_streaming": "Gebruik chat streaming"
+                },
+                "data_description": {
+                    "prompt": "Instructeer hoe het LLM moet reageren. Dit kan een sjabloon zijn.",
+                    "reasoning_effort": "Hoeveel redeneringstokens het model moet genereren voordat het een antwoord maakt op de prompt (voor bepaalde redeneermodellen)",
+                    "web_search": "Sta het model toe om het web te doorzoeken voor de laatste informatie voordat het een antwoord genereert",
+                    "search_context_size": "Algemene richtlijn voor de hoeveelheid contextvensterruimte die gebruikt moet worden voor de zoekopdracht",
+                    "user_location": "Verfijn zoekresultaten op basis van geografische locatie",
+                    "use_responses_endpoint": "Gebruik /responses-endpoint voor het genereren van antwoorden in plaats van /chat/completions",
+                    "use_chat_streaming": "Gebruik streaming voor chatvoltooiingen"
                 }
+            }
+        },
+        "error": {
+            "model_not_supported": "Dit model wordt niet ondersteund, kies een ander model",
+            "web_search_not_supported": "Web zoeken wordt niet ondersteund door dit model"
+        }
+    },
+    "selector": {
+        "reasoning_effort": {
+            "options": {
+                "low": "Laag",
+                "medium": "Medium",
+                "high": "Hoog"
+            }
+        },
+        "search_context_size": {
+            "options": {
+                "low": "Laag",
+                "medium": "Medium",
+                "high": "Hoog"
             }
         }
     },
     "services": {
-        "query_image": {
-            "name": "Query image",
-            "description": "Take in images and answer questions about them",
+        "generate_image": {
+            "name": "Genereer afbeelding",
+            "description": "Zet een prompt om in een afbeelding",
             "fields": {
                 "config_entry": {
-                    "name": "Config Entry",
-                    "description": "The config entry to use for this service"
-                },
-                "model": {
-                    "name": "Model",
-                    "description": "The model",
-                    "example": "gpt-4-vision-preview"
+                    "name": "Config-invoer",
+                    "description": "De config-invoer die voor deze actie moet worden gebruikt"
                 },
                 "prompt": {
                     "name": "Prompt",
-                    "description": "The text to ask about image",
-                    "example": "What’s in this image?"
+                    "description": "De tekst die omgezet moet worden in een afbeelding",
+                    "example": "Een foto van een hond"
                 },
-                "images": {
-                    "name": "Images",
-                    "description": "A list of images that would be asked",
-                    "example": "{\"url\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg\"}"
+                "size": {
+                    "name": "Grootte",
+                    "description": "De grootte van de te genereren afbeelding"
                 },
-                "max_tokens": {
-                    "name": "Max Tokens",
-                    "description": "The maximum tokens",
-                    "example": "300"
+                "quality": {
+                    "name": "Kwaliteit",
+                    "description": "De kwaliteit van de te genereren afbeelding"
+                },
+                "style": {
+                    "name": "Stijl",
+                    "description": "De stijl van de gegenereerde afbeelding"
                 }
             }
+        },
+        "generate_content": {
+            "name": "Genereer content",
+            "description": "Verzend een conversatievraag naar ChatGPT inclusief bijgevoegde afbeeldings- of PDF-bestanden",
+            "fields": {
+                "config_entry": {
+                    "name": "Config-invoer",
+                    "description": "De config-invoer die voor deze actie moet worden gebruikt"
+                },
+                "prompt": {
+                    "name": "Prompt",
+                    "description": "De prompt om te verzenden"
+                },
+                "filenames": {
+                    "name": "Bestanden",
+                    "description": "Lijst van te uploaden bestanden"
+                }
+            }
+        }
+    },
+    "exceptions": {
+        "invalid_config_entry": {
+            "message": "Ongeldige config-invoer opgegeven. Ontvangen {config_entry}"
         }
     }
 }

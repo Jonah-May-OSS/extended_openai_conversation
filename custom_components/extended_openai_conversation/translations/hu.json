@@ -1,72 +1,120 @@
 {
     "config": {
-        "error": {
-            "cannot_connect": "Nem sikerült csatlakozni",
-            "invalid_auth": "Azonosítás sikertelen",
-            "unknown": "Váratlan hiba"
-        },
         "step": {
             "user": {
                 "data": {
-                    "name": "Név",
-                    "api_key": "API Kulcs",
-                    "base_url": "Base Url",
-                    "api_version": "API Verzió",
-                    "organization": "Organization",
-                    "skip_authentication": "Azonosítás átugrása"
+                    "api_key": "API kulcs",
+                    "base_url": "Alap URL",
+                    "disable_auth": "Hitelesítés kihagyása"
                 }
             }
+        },
+        "error": {
+            "cannot_connect": "Csatlakozás sikertelen",
+            "invalid_auth": "Érvénytelen hitelesítés",
+            "unknown": "Váratlan hiba"
         }
     },
     "options": {
         "step": {
             "init": {
                 "data": {
-                    "max_tokens": "A válaszként viszaküldhető maximum tokenek száma",
-                    "model": "Model",
-                    "prompt": "Kiindulási szöveg sablon",
+                    "prompt": "Utmutatás",
+                    "chat_model": "Modell",
+                    "max_tokens": "Maximális tokenek, amiket válaszként visszaadunk",
                     "temperature": "Hőmérséklet",
                     "top_p": "Top P",
-                    "max_function_calls_per_conversation": "Beszélgetésenkénti maximum funkcióhívások száma",
-                    "functions": "Funkciók",
-                    "attach_username": "Felhasználónév hozzácsatolása az üzenethez",
-                    "use_tools": "Use Tools",
-                    "context_threshold": "Context Threshold",
-                    "context_truncate_strategy": "Context truncation strategy when exceeded threshold"
+                    "llm_hass_api": "Home Assistant vezérlése",
+                    "recommended": "Ajánlott modellbeállítások",
+                    "reasoning_effort": "Gondolkodási erőfeszítés",
+                    "web_search": "Webes keresés engedélyezése",
+                    "search_context_size": "Keresési kontextus mérete",
+                    "user_location": "Helyi otthon elhelyezkedésének belefoglalása",
+                    "use_responses_endpoint": "Használja a válaszok végpontját",
+                    "use_chat_streaming": "Használja a csevegési streamet"
+                },
+                "data_description": {
+                    "prompt": "Utasítások arra, hogyan válaszoljon a LLM. Ez lehet egy sablon.",
+                    "reasoning_effort": "Hány gondolkodási tokent kell generálnia a modellnek a válasz elkészítése előtt (bizonyos gondolkodási modellekhez)",
+                    "web_search": "Engedélyezze a modell számára, hogy webes keresést végezzen a legfrissebb információkért, mielőtt válaszot generálna",
+                    "search_context_size": "Általános iránymutatás a keresési kontextus ablak méretéhez",
+                    "user_location": "A keresési eredmények finomítása földrajzi hely alapján",
+                    "use_responses_endpoint": "Használja a /responses végpontot válaszok generálására a /chat/completions helyett",
+                    "use_chat_streaming": "Használja a streaminget a csevegési válaszokhoz"
                 }
+            }
+        },
+        "error": {
+            "model_not_supported": "Ez a modell nem támogatott, kérjük válasszon másik modellt",
+            "web_search_not_supported": "A webes keresés nem támogatott ebben a modellben"
+        }
+    },
+    "selector": {
+        "reasoning_effort": {
+            "options": {
+                "low": "Alacsony",
+                "medium": "Közepes",
+                "high": "Magas"
+            }
+        },
+        "search_context_size": {
+            "options": {
+                "low": "Alacsony",
+                "medium": "Közepes",
+                "high": "Magas"
             }
         }
     },
     "services": {
-        "query_image": {
-            "name": "Query image",
-            "description": "Take in images and answer questions about them",
+        "generate_image": {
+            "name": "Kép generálása",
+            "description": "A promptot képpé alakítja",
             "fields": {
                 "config_entry": {
-                    "name": "Config Entry",
-                    "description": "The config entry to use for this service"
-                },
-                "model": {
-                    "name": "Model",
-                    "description": "The model",
-                    "example": "gpt-4-vision-preview"
+                    "name": "Konfigurációs bejegyzés",
+                    "description": "A konfigurációs bejegyzés, amelyet ehhez az akcióhoz kell használni"
                 },
                 "prompt": {
                     "name": "Prompt",
-                    "description": "The text to ask about image",
-                    "example": "What’s in this image?"
+                    "description": "A szöveg, amelyet képpé kell alakítani",
+                    "example": "Egy kutya fényképe"
                 },
-                "images": {
-                    "name": "Images",
-                    "description": "A list of images that would be asked",
-                    "example": "{\"url\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg\"}"
+                "size": {
+                    "name": "Méret",
+                    "description": "A generált kép mérete"
                 },
-                "max_tokens": {
-                    "name": "Max Tokens",
-                    "description": "The maximum tokens",
-                    "example": "300"
+                "quality": {
+                    "name": "Minőség",
+                    "description": "A generált kép minősége"
+                },
+                "style": {
+                    "name": "Stílus",
+                    "description": "A generált kép stílusa"
                 }
             }
+        },
+        "generate_content": {
+            "name": "Tartalom generálása",
+            "description": "Küldjön egy beszélgetési kérdést a ChatGPT-nek, beleértve a csatolt képeket vagy PDF fájlokat",
+            "fields": {
+                "config_entry": {
+                    "name": "Konfigurációs bejegyzés",
+                    "description": "A konfigurációs bejegyzés, amelyet ehhez az akcióhoz kell használni"
+                },
+                "prompt": {
+                    "name": "Prompt",
+                    "description": "A küldendő prompt"
+                },
+                "filenames": {
+                    "name": "Fájlok",
+                    "description": "A feltöltendő fájlok listája"
+                }
+            }
+        }
+    },
+    "exceptions": {
+        "invalid_config_entry": {
+            "message": "Érvénytelen konfigurációs bejegyzés. Kapott {config_entry}"
         }
     }
 }

@@ -1,72 +1,120 @@
 {
     "config": {
-        "error": {
-            "cannot_connect": "Nie udało się połączyć",
-            "invalid_auth": "Błąd authentykacji",
-            "unknown": "Nieznany błąd"
-        },
         "step": {
             "user": {
                 "data": {
-                    "name": "Imię",
                     "api_key": "Klucz API",
-                    "base_url": "Bazowy URL",
-                    "api_version": "Wersja API",
-                    "organization": "Organization",
-                    "skip_authentication": "Pomiń authentykację"
+                    "base_url": "Podstawowy URL",
+                    "disable_auth": "Pomiń uwierzytelnianie"
                 }
             }
+        },
+        "error": {
+            "cannot_connect": "Nie udało się połączyć",
+            "invalid_auth": "Nieprawidłowe uwierzytelnianie",
+            "unknown": "Nieoczekiwany błąd"
         }
     },
     "options": {
         "step": {
             "init": {
                 "data": {
-                    "max_tokens": "Maksymalna ilość tokenów w odpowiedzi",
-                    "model": "Model",
-                    "prompt": "Prompt",
+                    "prompt": "Instrukcje",
+                    "chat_model": "Model",
+                    "max_tokens": "Maksymalna liczba tokenów do zwrócenia w odpowiedzi",
                     "temperature": "Temperatura",
                     "top_p": "Top P",
-                    "max_function_calls_per_conversation": "Maksymalna ilość wywołań funkcji na rozmowę",
-                    "functions": "Funkcje",
-                    "attach_username": "Dodaj nazwę użytkownika do wiadomości",
-                    "use_tools": "Use Tools",
-                    "context_threshold": "Context Threshold",
-                    "context_truncate_strategy": "Context truncation strategy when exceeded threshold"
+                    "llm_hass_api": "Zarządzaj Home Assistant",
+                    "recommended": "Zalecane ustawienia modelu",
+                    "reasoning_effort": "Wysiłek rozumowania",
+                    "web_search": "Włącz wyszukiwanie w sieci",
+                    "search_context_size": "Rozmiar kontekstu wyszukiwania",
+                    "user_location": "Uwzględnij lokalizację domu",
+                    "use_responses_endpoint": "Użyj punktu końcowego odpowiedzi",
+                    "use_chat_streaming": "Użyj streamingu czatu"
+                },
+                "data_description": {
+                    "prompt": "Instrukcje, jak LLM powinien odpowiedzieć. Może to być szablon.",
+                    "reasoning_effort": "Ile tokenów rozumowania model powinien wygenerować przed utworzeniem odpowiedzi na prompt (dla niektórych modeli rozumowania)",
+                    "web_search": "Pozwól modelowi na wyszukiwanie w internecie najnowszych informacji przed wygenerowaniem odpowiedzi",
+                    "search_context_size": "Ogólne wytyczne dotyczące ilości miejsca na okno kontekstowe do wykorzystania w wyszukiwaniu",
+                    "user_location": "Dopracowanie wyników wyszukiwania na podstawie geografii",
+                    "use_responses_endpoint": "Użyj punktu końcowego /responses do generowania odpowiedzi zamiast /chat/completions",
+                    "use_chat_streaming": "Użyj streamingu do zakończeń czatu"
                 }
+            }
+        },
+        "error": {
+            "model_not_supported": "Ten model nie jest obsługiwany, wybierz inny model",
+            "web_search_not_supported": "Wyszukiwanie w sieci nie jest obsługiwane przez ten model"
+        }
+    },
+    "selector": {
+        "reasoning_effort": {
+            "options": {
+                "low": "Niski",
+                "medium": "Średni",
+                "high": "Wysoki"
+            }
+        },
+        "search_context_size": {
+            "options": {
+                "low": "Niski",
+                "medium": "Średni",
+                "high": "Wysoki"
             }
         }
     },
     "services": {
-        "query_image": {
-            "name": "Query image",
-            "description": "Take in images and answer questions about them",
+        "generate_image": {
+            "name": "Generuj obraz",
+            "description": "Przekształca prompt w obraz",
             "fields": {
                 "config_entry": {
-                    "name": "Config Entry",
-                    "description": "The config entry to use for this service"
-                },
-                "model": {
-                    "name": "Model",
-                    "description": "The model",
-                    "example": "gpt-4-vision-preview"
+                    "name": "Wpis konfiguracyjny",
+                    "description": "Wpis konfiguracyjny do użycia w tej akcji"
                 },
                 "prompt": {
                     "name": "Prompt",
-                    "description": "The text to ask about image",
-                    "example": "What’s in this image?"
+                    "description": "Tekst, który ma zostać przekształcony w obraz",
+                    "example": "Zdjęcie psa"
                 },
-                "images": {
-                    "name": "Images",
-                    "description": "A list of images that would be asked",
-                    "example": "{\"url\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg\"}"
+                "size": {
+                    "name": "Rozmiar",
+                    "description": "Rozmiar generowanego obrazu"
                 },
-                "max_tokens": {
-                    "name": "Max Tokens",
-                    "description": "The maximum tokens",
-                    "example": "300"
+                "quality": {
+                    "name": "Jakość",
+                    "description": "Jakość generowanego obrazu"
+                },
+                "style": {
+                    "name": "Styl",
+                    "description": "Styl generowanego obrazu"
                 }
             }
+        },
+        "generate_content": {
+            "name": "Generuj treść",
+            "description": "Wysyła zapytanie konwersacyjne do ChatGPT, w tym wszelkie dołączone obrazy lub pliki PDF",
+            "fields": {
+                "config_entry": {
+                    "name": "Wpis konfiguracyjny",
+                    "description": "Wpis konfiguracyjny do użycia w tej akcji"
+                },
+                "prompt": {
+                    "name": "Prompt",
+                    "description": "Prompt do wysłania"
+                },
+                "filenames": {
+                    "name": "Pliki",
+                    "description": "Lista plików do załadowania"
+                }
+            }
+        }
+    },
+    "exceptions": {
+        "invalid_config_entry": {
+            "message": "Podano nieprawidłowy wpis konfiguracyjny. Otrzymano {config_entry}"
         }
     }
 }
